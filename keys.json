@@ -1,0 +1,14 @@
+{
+  "customer_1": {
+    "google_docs": "google_docs_customer_1",
+    "sfkb_user_name": "sfkb_user_name_customer_1",
+    "sfkb_password": "sfkb_password_customer_1"
+  },
+  "customer_2": {
+    "sfkb_user_name": "sfkb_user_name_customer_2",
+    "sfkb_password": "sfkb_password_customer_2"
+  },
+  "customer_3": {
+    "google_docs": "google_docs_customer_3"
+  }
+}
