@@ -1,10 +1,13 @@
 # google docs mock
 
-from typing import List, Dict
 import json
+import os
+from typing import List, Dict
 
-f = open('../../keys.json')
-KEYS = json.load(f)
+with open(os.path.join(os.path.dirname(__file__), "..", "..", "keys.json")) as f:
+    KEYS = json.load(f)
+
+__all__ = ["GoogleDocsClientMock"]
 
 
 class GoogleDocsClientMock:
@@ -13,8 +16,11 @@ class GoogleDocsClientMock:
         self.secret = secret
 
     def get_docs_call(self) -> List[Dict]:
-
-        if KEYS.get(self.customer).get("google_docs") != self.secret:
+        """
+        Get customer documents
+        :return:
+        """
+        if self.customer in KEYS and self.secret is not None and KEYS[self.customer].get("google_docs") != self.secret:
             raise ValueError("Wrong token given.")
 
         return [{
