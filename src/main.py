@@ -7,7 +7,7 @@ from typing import Dict, List
 from fastapi import FastAPI
 from pydantic import BaseModel
 from mocks.google_docs_client_mock import GoogleDocsClientMock
-from mocks.sfkb_mock import SFKBToken, SFKBMock
+from mocks.sfkb_mock import SFKBMock
 
 # Initial load of keys from keys.json
 with open(os.path.join(os.path.dirname(__file__), "..", "keys.json"), mode='r') as fi:
@@ -23,7 +23,7 @@ class Valid(Enum):
 
 # In-memory storage
 # customer_data: Dict[str, List[str]] = {}
-source_validated_dict: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+source_validated_dict: Dict[str, Dict[str, Valid]] = defaultdict(lambda: defaultdict(int))
 
 
 # The server object
@@ -80,18 +80,24 @@ class SaveKeyRequest(BaseModel):
 @app.post("/save_key")
 async def save_key(request: SaveKeyRequest):
     # Logic to save the keys in memory and
-    keys_data[request.key_customer] = keys_data.get(request.key_customer, {})
-    keys_data[request.key_customer][request.key_source] = request.key_value
+
+    customer = request.key_customer
+
+    keys_data[customer] = keys_data.get(customer, {})
+    keys_data[customer][request.key_source] = request.key_value
 
     # Very not optimized (and risky) way to store new\updates keys to the keys.json
     with open(os.path.join(os.path.dirname(__file__), "..", "keys.json"), mode='w') as fo:
         json.dump(keys_data, fo)
+
+    validate_source(customer, request.key_source)
 
     # Return response
     return {}
 
 
 # Is source validated request body model
+# NOTE: example code show Body for this GET, although a bit unconventional
 class IsSourceValidatedRequest(BaseModel):
     key_customer: str
     key_source: str
@@ -100,12 +106,12 @@ class IsSourceValidatedRequest(BaseModel):
 # Is source validated endpoint
 @app.get("/is_source_validated")
 async def is_source_validated(request: IsSourceValidatedRequest):
-    # Not approved source
-    # if request.key_source not in approved_sources:
-    #     return {"error": f"{request.key_source} not in approved sources: {approved_sources}"}
 
     customer = request.key_customer
     key_source = request.key_source
+
+    if customer not in keys_data.keys():
+        return {"message": f"Customer '{customer}' not found"}
 
     status = source_validated_dict[customer][key_source]
 
@@ -162,8 +168,8 @@ async def index_customer(request: IndexCustomerRequest):
 
 
 # Run when server starts
-for customer, customer_data in keys_data.items():
+for customer_name, customer_data in keys_data.items():
     for key_name, key_info in customer_data.items():
         if key_name in approved_sources:
-            validate_source(customer, key_name)
+            validate_source(customer_name, key_name)
 
